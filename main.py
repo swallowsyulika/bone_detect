@@ -42,11 +42,16 @@ opWrapper.start()
 # socket set up
 HOST='192.168.0.132'
 PORT=5555
+HOST2='192.168.0.142'
+PORT2=5556
 
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s2=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+
 print('Socket created')
 
 s.bind((HOST,PORT))
+s2.connect((HOST2, PORT2))
 print('Socket bind complete')
 s.listen(10)
 print('Socket now listening')
@@ -68,7 +73,11 @@ if record_mode==False:
     net  = Net()
     net.to(device)
     net.load_state_dict(torch.load(PATH))
-
+    
+def send_result(result_string,s2):
+    cmd = result_string
+    s2.send(cmd.encode("utf-8"))
+    
 def dataPreprocess(data):
     # print(data.shape)
     max = np.amax(data, axis=0)
