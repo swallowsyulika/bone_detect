@@ -5,8 +5,11 @@ import struct ## new
 
 HOST='192.168.0.132'
 PORT=5555
-
+HOST2='192.168.0.142'
+PORT2='5556'
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s2=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s2.connect((HOST2, PORT2))
 print('Socket created')
 
 s.bind((HOST,PORT))
