@@ -8,14 +8,28 @@ import pickle
 import struct ## new
 import time
 from pathlib import Path
+from model import Net
+import torch
+import torch.nn as nn
+import torchvision.transforms as transforms
 
 record_mode = False
 save_count = 0
+
+if record_mode == False:
+    weights_root = Path("weights")
+    weight = 'E050.pth'
+    PATH = os.path.join(weights_root, weight)
+    
 
 checkpoint_root = Path("dataset")
 action_root = Path("dataset\\bad_leg")
 checkpoint_root.mkdir(exist_ok=True)
 action_root.mkdir(exist_ok=True)
+
+torch.cuda.set_device(0)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device", torch.cuda.current_device(), torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
 params = dict()
@@ -43,8 +57,41 @@ data = b""
 payload_size = struct.calcsize(">L")
 print("payload_size: {}".format(payload_size))
 
-#cap = cv2.VideoCapture(0)
+transforms_ = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.5], [0.5])
+    ])
+
+
+# model set up
+if record_mode==False:
+    net  = Net()
+    net.to(device)
+    net.load_state_dict(torch.load(PATH))
+
+def dataPreprocess(data):
+    # print(data.shape)
+    max = np.amax(data, axis=0)
+    # print(max)
+    np.transpose(data)[0] = np.transpose(data)[0]/max[0]
+    np.transpose(data)[1] = np.transpose(data)[1]/max[1]
+    # print('+++++++++++++++++++++++++++')
+    # print(data)
+    data = transforms_(data).to(device)
+    torch.permute(data,(0, 2, 1))
+    return data
+
+##
+# cap = cv2.VideoCapture(0)
 keypoints_list = []
+
+def dataset_path(normal ,file):
+    if normal:
+        path = f"dataset\\normal\\{file}"
+    else:
+        path = f"dataset\\bad_leg\\{file}"
+    return path
+
 while True:
     pre_time = time.time()
     while len(data) < payload_size:
@@ -68,7 +115,7 @@ while True:
     
 
 
-    #ret, frame = cap.read()
+    # ret, frame = cap.read()
 
     datum = op.Datum()
     datum.cvInputData = frame
@@ -79,12 +126,33 @@ while True:
 
     #print(datum.poseKeypoints[0])
     print("----------------------------------")
+    print(save_count)
+
+    if datum.poseKeypoints is None:
+        continue
     if record_mode == True:
         keypoints_list.append(datum.poseKeypoints[0])
         if save_count%10 == 0:
-            np.save(r"dataset\\bad_leg\\data", np.array(keypoints_list))
-            print("dataset\\bad_leg\\data")
+            path = dataset_path(False, 'data2')
+            np.save(path, np.array(keypoints_list))
+            print(path)
     else:
+        ## recognition action
+
+        input = datum.poseKeypoints[0]
+
+        input = dataPreprocess(input)
+
+        #torch.from_numpy(data).to(device)
+        #print("transform : ",data.shape)
+        output = net(input)
+        #print(output)
+        output = torch.argmax(output, dim=1)
+        if output == 1:
+            print('Good')
+        elif output == 0:
+            print('U R so Bad')
+        
 
     cv2.imshow('img', datum.cvOutputData)
     #print(f'\r{1/ (time.time() - pre_time)}')
