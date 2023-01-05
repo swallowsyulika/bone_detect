@@ -12,6 +12,7 @@ from model import Net
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+from threading import Thread
 
 record_mode = False
 save_count = 0
@@ -87,7 +88,7 @@ def dataPreprocess(data):
     # print('+++++++++++++++++++++++++++')
     # print(data)
     data = transforms_(data).to(device)
-    torch.permute(data,(0, 2, 1))
+    data = torch.permute(data,(0, 2, 1))
     return data
 
 ##
@@ -101,72 +102,74 @@ def dataset_path(normal ,file):
         path = f"dataset\\bad_leg\\{file}"
     return path
 
-while True:
-    pre_time = time.time()
-    while len(data) < payload_size:
-        data += conn.recv(64)
-        if not data:
-            cv2.destroyAllWindows()
-            conn,addr=s.accept()
+def main():
+    while True:
+        pre_time = time.time()
+        while len(data) < payload_size:
+            data += conn.recv(64)
+            if not data:
+                cv2.destroyAllWindows()
+                conn,addr=s.accept()
+                continue
+        # receive image row data form client socket
+        packed_msg_size = data[:payload_size]
+        data = data[payload_size:]
+        msg_size = struct.unpack(">L", packed_msg_size)[0]
+        while len(data) < msg_size:
+            data += conn.recv(64)
+        frame_data = data[:msg_size]
+        data = data[msg_size:]
+
+        # unpack image using pickle 
+        frame=pickle.loads(frame_data, fix_imports=True, encoding="bytes")
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+
+
+
+        # ret, frame = cap.read()
+
+        datum = op.Datum()
+        datum.cvInputData = frame
+        opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+
+        #show_frame = np.concatenate((frame, datum.cvOutputData), axis=1)
+        # if datum.poseKeypoints != None:
+
+        #print(datum.poseKeypoints[0])
+        print("----------------------------------")
+        print(save_count)
+
+        if datum.poseKeypoints is None:
             continue
-    # receive image row data form client socket
-    packed_msg_size = data[:payload_size]
-    data = data[payload_size:]
-    msg_size = struct.unpack(">L", packed_msg_size)[0]
-    while len(data) < msg_size:
-        data += conn.recv(64)
-    frame_data = data[:msg_size]
-    data = data[msg_size:]
-    
-    # unpack image using pickle 
-    frame=pickle.loads(frame_data, fix_imports=True, encoding="bytes")
-    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-    
+        if record_mode == True:
+            keypoints_list.append(datum.poseKeypoints[0])
+            if save_count%10 == 0:
+                path = dataset_path(False, 'data2')
+                np.save(path, np.array(keypoints_list))
+                print(path)
+        else:
+            ## recognition action
+
+            input = datum.poseKeypoints[0]
+
+            input = dataPreprocess(input)
+
+            #torch.from_numpy(data).to(device)
+            #print("transform : ",data.shape)
+            output = net(input)
+            #print(output)
+            output = torch.argmax(output, dim=1)
+            mythread = Thread(target = send_result, args=(str(output),s2))
+            if output == 1:
+                print('Good')
+            elif output == 0:
+                print('U R so Bad')
 
 
-    # ret, frame = cap.read()
-
-    datum = op.Datum()
-    datum.cvInputData = frame
-    opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-
-    #show_frame = np.concatenate((frame, datum.cvOutputData), axis=1)
-    # if datum.poseKeypoints != None:
-
-    #print(datum.poseKeypoints[0])
-    print("----------------------------------")
-    print(save_count)
-
-    if datum.poseKeypoints is None:
-        continue
-    if record_mode == True:
-        keypoints_list.append(datum.poseKeypoints[0])
-        if save_count%10 == 0:
-            path = dataset_path(False, 'data2')
-            np.save(path, np.array(keypoints_list))
-            print(path)
-    else:
-        ## recognition action
-
-        input = datum.poseKeypoints[0]
-
-        input = dataPreprocess(input)
-
-        #torch.from_numpy(data).to(device)
-        #print("transform : ",data.shape)
-        output = net(input)
-        #print(output)
-        output = torch.argmax(output, dim=1)
-        if output == 1:
-            print('Good')
-        elif output == 0:
-            print('U R so Bad')
-        
-
-    cv2.imshow('img', datum.cvOutputData)
-    #print(f'\r{1/ (time.time() - pre_time)}')
-    save_count += 1
-    # exit()
+        cv2.imshow('img', datum.cvOutputData)
+        #print(f'\r{1/ (time.time() - pre_time)}')
+        save_count += 1
+        # exit()
     if cv2.waitKey(1) & 0xFF == 27:
         break
 
