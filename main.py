@@ -41,7 +41,7 @@ opWrapper.configure(params)
 opWrapper.start()
 
 # socket set up
-HOST='192.168.0.132'
+HOST='192.168.0.159'
 PORT=5555
 HOST2='192.168.0.142'
 PORT2=5556
@@ -104,6 +104,7 @@ def dataset_path(normal ,file):
 
 def main():
     while True:
+        global data, conn, save_count
         pre_time = time.time()
         while len(data) < payload_size:
             data += conn.recv(64)
@@ -170,8 +171,10 @@ def main():
         #print(f'\r{1/ (time.time() - pre_time)}')
         save_count += 1
         # exit()
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
+        if cv2.waitKey(1) & 0xFF == 27:
+            break
 
-cap.release()
+main()
+
+#cap.release()
 cv2.destroyAllWindows()
