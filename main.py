@@ -126,7 +126,7 @@ def main():
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
 
-
+        #print(frame.shape)
         # ret, frame = cap.read()
 
         datum = op.Datum()
@@ -152,7 +152,7 @@ def main():
             ## recognition action
 
             input = datum.poseKeypoints[0]
-
+            #print("keypoint 4", input[4][1])
             input = dataPreprocess(input)
 
             #torch.from_numpy(data).to(device)

@@ -17,7 +17,6 @@ class MyDataset(Dataset):
                 
                 data = np.load(f'dataset\\{name}\\data{i}.npy', allow_pickle=True)
                 
-                
                 if name == 'normal':
                     label = np.ones(len(data))
                 else:
@@ -29,14 +28,15 @@ class MyDataset(Dataset):
 
                     datas = np.concatenate([datas, data],axis=0)
                     labels = np.concatenate([labels, label])
+
         datas = np.transpose(datas, (0, 2, 1))  
-        
         max_list = np.amax(datas, axis=2)
         max = np.amax(max_list, axis=0)
         max_x = max[0]
         max_y = max[1]
-        datas[:][0] = datas[:][0]/max_x
-        datas[:][1] = datas[:][1]/max_y      
+        for i in range(len(datas)):
+            datas[i][:][0] = datas[i][:][0]/max_x
+            datas[i][:][1] = datas[i][:][1]/max_y      
         print(datas.shape)
         
         return datas, labels
@@ -48,7 +48,10 @@ class MyDataset(Dataset):
         data = self.datas[idx]
         label = self.labels[idx]
         if self.transform:
-            data = self.transform(data)
-
-        
+            data = self.transform(data)   
         return data, label
+
+
+if __name__ == "__main__":
+    ds = MyDataset(['normal', 'bad_leg'])
+    print(ds[5])
