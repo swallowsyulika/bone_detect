@@ -5,7 +5,6 @@ class MyDataset(Dataset):
     def __init__(self, dir_list=None, single_img=None, transform=None):
         self.dir_list = dir_list
         self.single_img = np.expand_dims(single_img.T, axis=0) if single_img is not None else None
-
         self.transform = transform
         self.center = (320, 240)
         self.threshold = 0.2
@@ -14,7 +13,7 @@ class MyDataset(Dataset):
         self.eval = False if dir_list is not None else True
 
         if self.eval:
-            self.datas = self.dataPreprocess(single_img)
+            self.datas = self.dataPreprocess(self.single_img)
         else:
             self.datas, self.labels = self.load_data(dir_list)
 
@@ -23,7 +22,7 @@ class MyDataset(Dataset):
         datas = []
         labels = []
         for name in class_list:
-            print(name)
+            #print(name)
             for i in range(3):
                 
                 data = np.load(f'dataset\\{name}\\data{i}.npy', allow_pickle=True)
@@ -41,7 +40,7 @@ class MyDataset(Dataset):
                     labels = np.concatenate([labels, label])
 
         datas = np.transpose(datas, (0, 2, 1)) 
-        print(datas[0].shape)
+        #print(datas[0].shape)
         datas = self.dataPreprocess(datas)
         return datas, labels
 
@@ -55,8 +54,11 @@ class MyDataset(Dataset):
         # max = np.amax(max_list, axis=0)
         # max_x = max[0]
         # max_y = max[1]
+        #print("in to for loop", datas.shape)
         for i in range(len(datas)):
+            #print("inner for loop", datas[i].shape)
             single_data = np.expand_dims(datas[i], axis=0)
+            #print("out exp_dims", single_data.shape)
             max_list = np.amax(single_data, axis=2)
             max = np.amax(max_list, axis=0)
             max_x = max[0]
@@ -69,7 +71,7 @@ class MyDataset(Dataset):
                     datas[i][:][0][idx] = 0.0
                     datas[i][:][1][idx] = 0.0
 
-        print(datas.shape)
+        #print(datas.shape)
         
         return datas
 

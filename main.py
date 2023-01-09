@@ -157,7 +157,9 @@ def main():
             input = datum.poseKeypoints[0]
             #print("keypoint 4", input[4][1])
             #input = dataPreprocess(input)
-            input = MyDataset(single_img=input, transform=transforms_)[0]
+            #print(input.shape)
+            input = MyDataset(single_img=input, transform=transforms_)[0].to(device)
+
 
             #torch.from_numpy(data).to(device)
             #print("transform : ",data.shape)
