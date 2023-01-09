@@ -1,10 +1,3 @@
-import numpy as np
+from playsound import playsound
 
-train_label_filepath = r'dataset\\bad_leg\\data.npy'
-
-data = np.load(train_label_filepath, allow_pickle=True)
-
-
-for i in range(len(data)):
-    print(data)
-    print("----------------------------------------------------")
+playsound(r"./voice_385739.mp3")

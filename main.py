@@ -42,7 +42,8 @@ opWrapper.configure(params)
 opWrapper.start()
 
 # socket set up
-HOST='192.168.0.159'
+#HOST='192.168.0.159'
+HOST='192.168.0.132'
 PORT=5555
 HOST2='192.168.0.142'
 PORT2=5556
