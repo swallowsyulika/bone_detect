@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from threading import Thread
+from myDataset import MyDataset
 
 record_mode = False
 save_count = 0
@@ -81,6 +82,8 @@ def send_result(result_string,s2):
     
 def dataPreprocess(data):
     # print(data.shape)
+    
+
     max = np.amax(data, axis=0)
     # print(max)
     np.transpose(data)[0] = np.transpose(data)[0]/max[0]
@@ -126,7 +129,7 @@ def main():
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
 
-        #print(frame.shape)
+        #print(frame.shape) ##(480, 640, 3)
         # ret, frame = cap.read()
 
         datum = op.Datum()
@@ -153,7 +156,8 @@ def main():
 
             input = datum.poseKeypoints[0]
             #print("keypoint 4", input[4][1])
-            input = dataPreprocess(input)
+            #input = dataPreprocess(input)
+            input = MyDataset(single_img=input, transform=transforms_)[0]
 
             #torch.from_numpy(data).to(device)
             #print("transform : ",data.shape)
