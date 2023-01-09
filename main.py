@@ -76,7 +76,7 @@ if record_mode==False:
     net.to(device)
     net.load_state_dict(torch.load(PATH))
     
-def send_result(result_string,s2):
+def send_result(result_string, s2):
     cmd = result_string
     s2.send(cmd.encode("utf-8"))
     
@@ -166,11 +166,15 @@ def main():
             output = net(input)
             #print(output)
             output = torch.argmax(output, dim=1)
-            mythread = Thread(target = send_result, args=(str(output),s2))
+            
+
             if output == 1:
                 print('Good')
             elif output == 0:
                 print('U R so Bad')
+            
+            mythread = Thread(target = send_result, args=(str(output.cpu().item()),s2))
+            mythread.start()
 
 
         cv2.imshow('img', datum.cvOutputData)
